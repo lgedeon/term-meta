@@ -1,4 +1,4 @@
-taxonomy-meta
+term-meta
 =============
 
-Taxonomy Meta for WordPress without adding or modifying tables
+Taxonomy Term Meta for WordPress without adding or modifying tables
