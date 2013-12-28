@@ -73,7 +73,7 @@ if ( ! function_exists( 'add_term_meta' ) ) {
 }
 
 /**
- * Remove metadata matching criteria from a post.
+ * Remove metadata matching criteria from a term.
  *
  * You can match based on the key, or key and value. Removing based on key and
  * value, will keep from removing duplicate metadata with the same key. It also
@@ -99,7 +99,7 @@ if ( ! function_exists( 'delete_term_meta' ) ) {
 }
 
 /**
- * Retrieve post meta field for a post.
+ * Retrieve post meta field for a term.
  *
  * @uses Term_Meta
  *
@@ -122,7 +122,7 @@ if ( ! function_exists( 'get_term_meta' ) ) {
 }
 
 /**
- * Update post meta field based on post ID.
+ * Update post meta field based on new style term ID.
  *
  * Use the $prev_value parameter to differentiate between meta fields with the
  * same key and post ID.
@@ -131,20 +131,20 @@ if ( ! function_exists( 'get_term_meta' ) ) {
  *
  * @uses Term_Meta
  *
- * @param int $post_id Post ID.
+ * @param int $term_id A new unique term ID distinct from the ones currently in core. Use get_unique_term_id() to get.
  * @param string $meta_key Metadata key.
  * @param mixed $meta_value Metadata value.
  * @param mixed $prev_value Optional. Previous value to check before removing.
  * @return bool True on success, false on failure.
  */
 if ( ! function_exists( 'update_term_meta' ) ) {
-	function update_term_meta($post_id, $meta_key, $meta_value, $prev_value = '') {
+	function update_term_meta($term_id, $meta_key, $meta_value, $prev_value = '') {
 		$term_meta = Term_Meta::instance();
 		if ( ! $term_meta->check_unique_term_id( $term_id ) ) {
 			return false;
 		}
 		if ( $term_meta->check_unique_term_id( $term_id) ) {
-			return update_metadata('post', $post_id, $meta_key, $meta_value, $prev_value);
+			return update_metadata('post', $term_id, $meta_key, $meta_value, $prev_value);
 		}
 	}
 }
