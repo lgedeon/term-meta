@@ -9,4 +9,3 @@ TODO:
 * Add notes on creating taxonomy before registering meta. Specifically, on using cpt ui vs taxonomy ui.
 * Decide whether to use TDS_source query arg.
 * Add function to get term object using new term key. Maybe filter get term functions.
-* Finish _term_meta_by_name() functions
