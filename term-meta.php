@@ -63,12 +63,10 @@ if ( ! function_exists( 'get_unique_term_id' ) ) {
 if ( ! function_exists( 'add_term_meta' ) ) {
 	function add_term_meta( $term_id, $meta_key, $meta_value, $unique = false ) {
 		$term_meta = Term_Meta::instance();
-		if ( ! $term_meta->check_unique_term_id( $term_id ) ) {
-			return false;
-		}
-		if ( $term_meta->check_unique_term_id( $term_id) ) {
+		if ( $term_meta->check_unique_term_id( $term_id ) ) {
 			return add_metadata('post', $term_id, $meta_key, $meta_value, $unique);
 		}
+		return false;
 	}
 }
 
@@ -89,12 +87,10 @@ if ( ! function_exists( 'add_term_meta' ) ) {
 if ( ! function_exists( 'delete_term_meta' ) ) {
 	function delete_term_meta( $term_id, $meta_key, $meta_value = '' ) {
 		$term_meta = Term_Meta::instance();
-		if ( ! $term_meta->check_unique_term_id( $term_id ) ) {
-			return false;
-		}
-		if ( $term_meta->check_unique_term_id( $term_id) ) {
+		if ( $term_meta->check_unique_term_id( $term_id ) ) {
 			return delete_metadata( 'post', $term_id, $meta_key, $meta_value );
 		}
+		return false;
 	}
 }
 
@@ -112,12 +108,10 @@ if ( ! function_exists( 'delete_term_meta' ) ) {
 if ( ! function_exists( 'get_term_meta' ) ) {
 	function get_term_meta($term_id, $key = '', $single = false) {
 		$term_meta = Term_Meta::instance();
-		if ( ! $term_meta->check_unique_term_id( $term_id ) ) {
-			return false;
-		}
-		if ( $term_meta->check_unique_term_id( $term_id) ) {
+		if ( $term_meta->check_unique_term_id( $term_id ) ) {
 			return get_metadata('post', $term_id, $key, $single);
 		}
+		return false;
 	}
 }
 
@@ -140,12 +134,10 @@ if ( ! function_exists( 'get_term_meta' ) ) {
 if ( ! function_exists( 'update_term_meta' ) ) {
 	function update_term_meta($term_id, $meta_key, $meta_value, $prev_value = '') {
 		$term_meta = Term_Meta::instance();
-		if ( ! $term_meta->check_unique_term_id( $term_id ) ) {
-			return false;
-		}
-		if ( $term_meta->check_unique_term_id( $term_id) ) {
+		if ( $term_meta->check_unique_term_id( $term_id ) ) {
 			return update_metadata('post', $term_id, $meta_key, $meta_value, $prev_value);
 		}
+		return false;
 	}
 }
 
@@ -165,13 +157,10 @@ if ( ! function_exists( 'update_term_meta' ) ) {
 if ( ! function_exists( 'add_term_meta_by_name' ) ) {
 	function add_term_meta_by_name( $taxonomy, $term, $meta_key, $meta_value, $unique = false ) {
 		$term_meta = Term_Meta::instance();
-		$term_id = $term_meta->get_unique_term_id( $taxonomy, $term );
-		if ( ! $term_meta->check_unique_term_id( $term_id ) ) {
-			return false;
-		}
-		if ( $term_meta->check_unique_term_id( $term_id) ) {
+		if ( $term_id = $term_meta->get_unique_term_id( $taxonomy, $term ) ) {
 			return add_metadata('post', $term_id, $meta_key, $meta_value, $unique);
 		}
+		return false;
 	}
 }
 
@@ -194,13 +183,10 @@ if ( ! function_exists( 'add_term_meta_by_name' ) ) {
 if ( ! function_exists( 'delete_term_meta_by_name' ) ) {
 	function delete_term_meta_by_name( $taxonomy, $term, $meta_key, $meta_value = '' ) {
 		$term_meta = Term_Meta::instance();
-		$term_id = $term_meta->get_unique_term_id( $taxonomy, $term );
-		if ( ! $term_meta->check_unique_term_id( $term_id ) ) {
-			return false;
-		}
-		if ( $term_meta->check_unique_term_id( $term_id) ) {
+		if ( $term_id = $term_meta->get_unique_term_id( $taxonomy, $term ) ) {
 			return delete_metadata( 'post', $term_id, $meta_key, $meta_value );
 		}
+		return false;
 	}
 }
 
@@ -219,13 +205,10 @@ if ( ! function_exists( 'delete_term_meta_by_name' ) ) {
 if ( ! function_exists( 'get_term_meta_by_name' ) ) {
 	function get_term_meta_by_name( $taxonomy, $term, $key = '', $single = false) {
 		$term_meta = Term_Meta::instance();
-		$term_id = $term_meta->get_unique_term_id( $taxonomy, $term );
-		if ( ! $term_meta->check_unique_term_id( $term_id ) ) {
-			return false;
-		}
-		if ( $term_meta->check_unique_term_id( $term_id) ) {
+		if ( $term_id = $term_meta->get_unique_term_id( $taxonomy, $term ) ) {
 			return get_metadata('post', $term_id, $key, $single);
 		}
+		return false;
 	}
 }
 
@@ -249,12 +232,9 @@ if ( ! function_exists( 'get_term_meta_by_name' ) ) {
 if ( ! function_exists( 'update_term_meta_by_name' ) ) {
 	function update_term_meta_by_name( $taxonomy, $term, $meta_key, $meta_value, $prev_value = '') {
 		$term_meta = Term_Meta::instance();
-		$term_id = $term_meta->get_unique_term_id( $taxonomy, $term );
-		if ( ! $term_meta->check_unique_term_id( $term_id ) ) {
-			return false;
+		if ( $term_id = $term_meta->get_unique_term_id( $taxonomy, $term ) ) {
+			return update_metadata('post', $term_id, $meta_key, $meta_value, $prev_value );
 		}
-		if ( $term_meta->check_unique_term_id( $term_id) ) {
-			return update_metadata('post', $term_id, $meta_key, $meta_value, $prev_value);
-		}
+		return false;
 	}
 }
