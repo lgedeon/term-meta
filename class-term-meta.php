@@ -1,4 +1,13 @@
 <?php
+/**
+ * Class to interface with term-data-store and to cache frequently needed data.
+ *
+ * Adds term meta to terms of select taxonomies. This is achieved by pairing a custom post type with each registered
+ * taxonomy. If the taxonomy already contains terms the associated posts will be created when meta is added to the term.
+ *
+ * Taxonomy post-type pairs are stored in $_taxonomies. Ids are cached in $_term_post_ids to reduce database hits.
+ *
+ */
 
 if ( ! class_exists( 'Term_Meta' ) ) {
 
@@ -7,11 +16,6 @@ class Term_Meta {
 	 * @var bool|Term_Meta
 	 */
 	protected static $_instance = false;
-
-	/**
-	 * @var int
-	 */
-	protected $_last_unique_term_id = null;
 
 	/**
 	 * Gets the singleton instance of this class - should only get constructed once.
@@ -27,136 +31,110 @@ class Term_Meta {
 	}
 
 	/**
-	 * @var array
+	 * @var array Taxonomies that have term meta enabled.
 	 */
-	protected $taxonomies = array();
+	protected $_taxonomies = array();
+
+	/**
+	 * @var array Stores previously retrieved ids to reduce db calls.
+	 */
+	protected $_term_post_ids = array();
 
 	/**
 	 * Constructor -  Wire up actions and filters
 	 */
 	protected function __construct() {
-		add_filter( 'posts_results', array( $this, 'catch_missing_cpt' ), 10, 2 );
+		add_action( '', array( $this, 'create_term_post' ) );
 	}
 
-	public function catch_missing_cpt ( $posts, $test_query ) {
-		$query = $test_query->query;
-		if ( empty ( $posts ) &&
-			in_array( $query['post_type'], $this->taxonomies ) &&
-			1    == $query['posts_per_page'] &&
-			true == $query['ignore_sticky_posts'] &&
-			true == $query['no_found_rows'] &&
-			'id' == $query['tax_query'][0]['field'] &&
-			is_int( $query['tax_query'][0]['terms'] )
-		) {
-			$term_id = $query['tax_query'][0]['terms'];
-			$taxonomy = $query['tax_query'][0]['taxonomy'];
-			$term = get_term( $term_id, $taxonomy );
+	/**
+	 *
+	 * The library, term-data-store, used to create the association assumes no pre-existing terms. It then creates a new
+	 * paired custom post each time a term is added. Since we may be starting with pre-existing terms, we fire an action
+	 * in get_taxonomy_term_id when we detect a missing paired post.
+	 *
+	 * This action is then picked up by this function and the paired post is added immediately. However, other plugins
+	 * and themes can replace the default action and add the post asynchronously or do other stuff as needed.
+	 *
+	 * @param $taxonomy
+	 * @param $term
+	 *
+	 * @return array
+	 */
+	public function create_term_post ( $taxonomy, $term ) {
+		$post_type = get_post_type_object( $this->_taxonomies[$taxonomy] );
 
-			add_filter( 'tds_balancing_from_post', '__return_false' );
-			$post_id = wp_insert_post( array(
-				'post_type' => $query['post_type'],
-				'post_title'  => $term->name,
-				'post_name'   => $term->slug,
-				'post_status' => 'publish',
-			) );
-			wp_set_object_terms( $post_id, $term_id, $taxonomy );
-			remove_filter( 'tds_balancing_from_post', '__return_false' );
+		add_filter( 'tds_balancing_from_post', '__return_false' );
+		$post_id = wp_insert_post( array(
+			'post_type' => $post_type->slug,
+			'post_title'  => $term->name,
+			'post_name'   => $term->slug,
+			'post_status' => 'publish',
+		) );
+		wp_set_object_terms( $post_id, $term->term_id, $taxonomy );
+		remove_filter( 'tds_balancing_from_post', '__return_false' );
 
-			$posts = array( get_post( $post_id ) );
-			$test_query->posts = $posts;
-		}
-
-		return $posts;
+		return $post_id;
 	}
 
 	/**
 	 * This implementation is designed to be forward compatible with expected changes to WordPress core and will be much
 	 * more efficient then. For now, only add term meta for taxonomies that need it.
 	 *
-	 * @param $taxonomy
-	 * @param string $cpt_name
-	 * @param bool $show_cpt_ui
-	 * @param string $singular_name
+	 * If you want to do anything fancy with the CPT that will be attached to the taxonomy, you can define it ahead of
+	 * and pass it into the function. Otherwise this function will create it.
+	 *
+	 * @param string $taxonomy   Taxonomy name
+	 * @param string $post_type  Post type name
+	 *
 	 * @return bool
 	 */
-	public function register_meta_taxonomy( $taxonomy, $cpt_name = '', $show_cpt_ui = false, $singular_name = '' ) {
-		if ( $taxonomy == $cpt_name || ! taxonomy_exists( $taxonomy ) ) {
+	public function register_meta_taxonomy( $taxonomy, $post_type = '' ) {
+		if ( ! taxonomy_exists( $taxonomy ) ) {
 			return false;
 		}
 
-		if ( ! post_type_exists( $cpt_name ) ) {
+		if ( ! post_type_exists( $post_type ) ) {
+			$post_type = sanitize_key( ucfirst( $taxonomy ) ) . '_tax_meta';
 
-			$cpt_name = $cpt_name ?: ucfirst( $taxonomy );
-			$singular_name = $singular_name ?: $cpt_name;
-			$slug = sanitize_key( $cpt_name );
+			$post_type_args = array(
+				'show_ui' => false,
+				'rewrite' => false,
+				'label'   => $taxonomy . ' taxonomy meta',
+			);
 
-			if ( $show_cpt_ui ) {
-				$labels = array(
-					'name'                       => $cpt_name,
-					'singular_name'              => $singular_name,
-					'search_items'               => "Search {$singular_name}",
-					'popular_items'              => "Popular {$cpt_name}",
-					'all_items'                  => "All {$cpt_name}",
-					'parent_item'                => "Parent {$singular_name}",
-					'parent_item_colon'          => "Parent {$singular_name}:",
-					'edit_item'                  => "Edit {$singular_name}",
-					'update_item'                => "Update {$singular_name}",
-					'add_new'                    => "Add New",
-					'add_new_item'               => "Add New {$singular_name}",
-					'new_item_name'              => "New {$singular_name} Name",
-					'separate_items_with_commas' => "Separate {$cpt_name} with commas",
-					'add_or_remove_items'        => "Add or remove {$cpt_name}",
-					'choose_from_most_used'      => "Choose from the most used {$cpt_name}",
-					'not_found'                  => "No {$cpt_name} found.",
-					'menu_name'                  => "{$cpt_name}",
-					'new_item'                   => "New {$singular_name}",
-					'view_item'                  => "View {$singular_name}",
-					'not_found_in_trash'         => "No {$cpt_name} found in Trash",
-				);
-
-				$post_type_args = array(
-					'show_ui'              => true,
-					'show_in_menu'         => 'edit.php?post_type=' . $slug,
-					'show_in_admin_bar'    => false,
-					'register_meta_box_cb' => "{$slug}_taxonomy_meta_box",
-					'supports'             => array( 'title' ),
-					'labels'               => $labels,
-				);
-			} else {
-				$slug = $slug . '_tax_meta';
-				$post_type_args = array(
-					'show_ui' => false,
-					'rewrite' => false,
-					'label'   => $cpt_name,
-				);
-			}
-
-			register_post_type( $slug, $post_type_args );
+			register_post_type( $post_type, $post_type_args );
 		}
 
-		Term_Data_Store\add_relationship( $slug, $taxonomy );
-		$this->taxonomies[$taxonomy] = $slug;
+		Term_Data_Store\add_relationship( $post_type, $taxonomy );
+		$this->_taxonomies[$taxonomy] = $post_type;
 
 	}
 
 	/**
-	 *  Get unique term ID
+	 * Get ID for a taxonomy term pair.
 	 *
-	 * Terms do not yet have unique IDs in WordPress core. The same term_id is used multiple times in different
+	 * Not all taxonomy term pairs have unique IDs in WordPress core yet. All new terms created after 4.1 will, and the
+	 * rest are expected to be split in 4.2 or 4.3. For now, the same term_id is used multiple times in different
 	 * taxonomies.
 	 *
 	 * We solve this by using the post ID of the associated cpt we are using for meta storage. This function returns
 	 * that unique key.
 	 *
-	 * @param string $taxonomy
-	 * @param string $term
+	 * This key is intended for internal use only since taxonomy terms will have a unique ID soon, and it will be
+	 * different from the key returned by this function.
+	 *
+	 * @param string $taxonomy    The taxonomy that the term should be found in.
+	 * @param string $term        The term as a string. Will also accept integer, but that is not recommended.
 	 * @return bool|null|WP_Post
 	 */
-	public function get_unique_term_id( $taxonomy, $term = '' ) {
-		$this->_last_unique_term_id = null;
-
-		if ( ! array_key_exists( $taxonomy, $this->taxonomies ) ) {
+	public function get_taxonomy_term_id( $taxonomy, $term = '' ) {
+		if ( ! array_key_exists( $taxonomy, $this->_taxonomies ) ) {
 			return false;
+		}
+
+		if ( isset( $this->_term_post_ids[$taxonomy][$term] ) ) {
+			return $this->_term_post_ids[$taxonomy][$term];
 		}
 
 		if ( is_int( $term ) ) {
@@ -170,39 +148,17 @@ class Term_Meta {
 		}
 
 		if ( $cpt_post = Term_Data_Store\get_related_post( $term, $taxonomy ) ) {
-			$this->_last_unique_term_id = $cpt_post->ID;
+			$this->_term_post_ids[$taxonomy][$term->name] = $cpt_post->ID;
 			return $cpt_post->ID;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Thanks to old style term_id's this can be a bit tricky. We need to carefully check that we are getting
-	 * the intended term. It is still possible to pass an old-style $term_id and by luck it will match a new term_id,
-	 * but check
-	 *
-	 * @param int $maybe_unique_id
-	 * @return bool
-	 */
-	public function check_unique_term_id( $maybe_unique_id ) {
-		if ( $maybe_unique_id == $this->_last_unique_term_id  ) {
-			return true;
-		}
-
-		if ( $post = get_post( $maybe_unique_id )
-			&& in_array( $post->post_type, $this->taxonomies )
-			&& $term = Term_Data_Store\get_related_term( $maybe_unique_id )
-			&& $term->taxonomy == $this->taxonomies[$post->$post_type] )
-			{
-				$this->_last_unique_term_id = $maybe_unique_id;
-				return true;
+		} else {
+			// if we don't have a matching post, fire an action which by default creates the post. Then try again.
+			do_action( 'term_meta_missing_paired_post', $taxonomy, $term );
+			if ( $cpt_post = Term_Data_Store\get_related_post( $term, $taxonomy ) ) {
+				$this->_term_post_ids[$taxonomy][$term->name] = $cpt_post->ID;
+				return $cpt_post->ID;
 			}
-
-		$this->_last_unique_term_id = null;
-		return false;
+		}
 	}
-
 }
 
 Term_Meta::instance();

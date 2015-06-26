@@ -122,8 +122,10 @@ function get_relationship( $for, $set = null ) {
  * infinite loop of creating posts and terms from each other. The function uses
  * a static variable to store the current balancing status. To set it, pass a
  * variable as an argument. The function will check for any arguments and use
- * the first one cast as a boolean as the static value.
+ * the first one cast as a boolean as the static value. The function also passes
+ * the value through a filter to make this more extensible.
  *
+ * @uses apply_filters() Filters return value with tds_balancing_relationship
  *
  * @return bool Whether a relationship is currently being balanced
  */
@@ -135,7 +137,7 @@ function balancing_relationship() {
 		$balancing_status = (boolean) func_get_arg( 0 );
 	}
 
-	return $balancing_status;
+	return apply_filters( 'tds_balancing_relationship', $balancing_status );
 
 }
 
@@ -192,11 +194,9 @@ function get_save_post_hook( $post_type, $taxonomy ) {
 			return;
 		}
 		balancing_relationship( true );
-		if ( function_exists( '' ) ) {
-			$term = wpcom_vip_get_term_by( 'slug', $post->post_name, $taxonomy, ARRAY_A );
-		} else {
-			$term = get_term_by( 'slug', $post->post_name, $taxonomy, ARRAY_A );
-		}
+
+		$term = get_term_by( 'slug', $post->post_name, $taxonomy, ARRAY_A );
+
 		if( !$term )
 		{
 			$term = wp_insert_term( $post->post_title, $taxonomy, array( 'slug' => $post->post_name ) );
@@ -327,7 +327,6 @@ function get_related_post( $term, $taxonomy = null ) {
 
 	if ( ! empty( $post_type ) ) {
 		$posts = new \WP_Query( array(
-			'TDS_source'          => 'get_related_post', // so I can filter just this query
 			'post_type'           => $post_type,
 			'posts_per_page'      => 1,
 			'tax_query'           => array( array(
