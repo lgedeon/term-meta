@@ -46,7 +46,7 @@ class Term_Meta {
 	 * Constructor -  Wire up actions and filters
 	 */
 	protected function __construct() {
-		add_action( '', array( $this, 'create_term_post' ) );
+		add_action( 'term_meta_missing_paired_post', array( $this, 'create_term_post' ), 10, 2 );
 	}
 
 	/**
