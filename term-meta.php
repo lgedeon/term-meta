@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Term Meta Polyfill
+ * Plugin Name: Term Meta Polyfill ( aka Taxonomy Meta )
  * Plugin URL: https://github.com/lgedeon/term-meta
  * Description: Term Meta for WordPress without adding or modifying tables. Adds term meta to terms of select taxonomies. This is achieved by pairing a custom-post-type post with each registered taxonomy. The functions are designed to be forward compatible. So as parts of the term meta added to core https://core.trac.wordpress.org/ticket/10142 functions in this plugin can be updated and eventually replaced.
  * Version:     0.2
@@ -22,10 +22,10 @@ require_once ( 'class-term-meta.php' );
  * @param $taxonomy
  * @return bool
  */
-if ( ! function_exists( 'register_meta_taxonomy' ) ) {
-	function register_meta_taxonomy( $taxonomy ) {
+if ( ! function_exists( 'register_term_meta_taxonomy' ) ) {
+	function register_term_meta_taxonomy( $taxonomy ) {
 		$term_meta = Term_Meta::instance();
-		return $term_meta->register_meta_taxonomy( $taxonomy );
+		return $term_meta->register_term_meta_taxonomy( $taxonomy );
 	}
 }
 
@@ -44,7 +44,7 @@ if ( ! function_exists( 'register_meta_taxonomy' ) ) {
 if ( ! function_exists( 'add_term_meta' ) ) {
 	function add_term_meta( $taxonomy, $term, $meta_key, $meta_value, $unique = false ) {
 		$term_meta = Term_Meta::instance();
-		if ( $term_id = $term_meta->get_taxonomy_term_id( $taxonomy, $term ) ) {
+		if ( $term_id = $term_meta->get_term_meta_post_id( $taxonomy, $term ) ) {
 			return add_metadata('post', $term_id, $meta_key, $meta_value, $unique);
 		}
 	}
@@ -69,7 +69,7 @@ if ( ! function_exists( 'add_term_meta' ) ) {
 if ( ! function_exists( 'delete_term_meta' ) ) {
 	function delete_term_meta( $taxonomy, $term, $meta_key, $meta_value = '' ) {
 		$term_meta = Term_Meta::instance();
-		if ( $term_id = $term_meta->get_taxonomy_term_id( $taxonomy, $term ) ) {
+		if ( $term_id = $term_meta->get_term_meta_post_id( $taxonomy, $term ) ) {
 			return delete_metadata( 'post', $term_id, $meta_key, $meta_value );
 		}
 	}
@@ -90,7 +90,7 @@ if ( ! function_exists( 'delete_term_meta' ) ) {
 if ( ! function_exists( 'get_term_meta' ) ) {
 	function get_term_meta( $taxonomy, $term, $key = '', $single = false) {
 		$term_meta = Term_Meta::instance();
-		if ( $term_id = $term_meta->get_taxonomy_term_id( $taxonomy, $term ) ) {
+		if ( $term_id = $term_meta->get_term_meta_post_id( $taxonomy, $term ) ) {
 			return get_metadata('post', $term_id, $key, $single);
 		}
 	}
@@ -116,7 +116,7 @@ if ( ! function_exists( 'get_term_meta' ) ) {
 if ( ! function_exists( 'update_term_meta' ) ) {
 	function update_term_meta( $taxonomy, $term, $meta_key, $meta_value, $prev_value = '') {
 		$term_meta = Term_Meta::instance();
-		if ( $term_id = $term_meta->get_taxonomy_term_id( $taxonomy, $term ) ) {
+		if ( $term_id = $term_meta->get_term_meta_post_id( $taxonomy, $term ) ) {
 			return update_metadata('post', $term_id, $meta_key, $meta_value, $prev_value );
 		}
 	}

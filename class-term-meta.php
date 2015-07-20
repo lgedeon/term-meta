@@ -53,13 +53,13 @@ class Term_Meta {
 	 *
 	 * The library, term-data-store, used to create the association assumes no pre-existing terms. It then creates a new
 	 * paired custom post each time a term is added. Since we may be starting with pre-existing terms, we fire an action
-	 * in get_taxonomy_term_id when we detect a missing paired post.
+	 * in get_term_meta_post_id when we detect a missing paired post.
 	 *
 	 * This action is then picked up by this function and the paired post is added immediately. However, other plugins
 	 * and themes can replace the default action and add the post asynchronously or do other stuff as needed.
 	 *
-	 * @param $taxonomy
-	 * @param $term
+	 * @param string $taxonomy
+	 * @param object $term     Term object
 	 *
 	 * @return array
 	 */
@@ -91,7 +91,7 @@ class Term_Meta {
 	 *
 	 * @return bool
 	 */
-	public function register_meta_taxonomy( $taxonomy, $post_type = '' ) {
+	public function register_term_meta_taxonomy( $taxonomy, $post_type = '' ) {
 		if ( ! taxonomy_exists( $taxonomy ) ) {
 			return false;
 		}
@@ -126,12 +126,12 @@ class Term_Meta {
 	 * @param string $term        The term as a string. Will also accept integer, but that is not recommended.
 	 * @return bool|null|WP_Post
 	 */
-	public function get_taxonomy_term_id( $taxonomy, $term = '' ) {
+	public function get_term_meta_post_id( $taxonomy, $term = '' ) {
 		if ( ! taxonomy_exists( $taxonomy ) ) {
 			return false;
 		} elseif ( ! array_key_exists( $taxonomy, $this->_taxonomies ) ) {
 			if ( apply_filters( 'term_meta_allow_late_registration', true, $taxonomy, $term ) ) {
-				$this->register_meta_taxonomy( $taxonomy );
+				$this->register_term_meta_taxonomy( $taxonomy );
 			} else {
 				return false;
 			}
