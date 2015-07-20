@@ -2,17 +2,22 @@
 /**
  * Plugin Name: Term Meta Polyfill
  * Plugin URL: https://github.com/lgedeon/term-meta
- * Description: Adds term meta to terms of select taxonomies. This is achieved by pairing a custom post type with each registered taxonomy. The functions are designed to be forward compatible. So as parts of the term meta added to core https://core.trac.wordpress.org/ticket/10142 functions in this plugin can be updated and eventually replaced.
+ * Description: Term Meta for WordPress without adding or modifying tables. Adds term meta to terms of select taxonomies. This is achieved by pairing a custom-post-type post with each registered taxonomy. The functions are designed to be forward compatible. So as parts of the term meta added to core https://core.trac.wordpress.org/ticket/10142 functions in this plugin can be updated and eventually replaced.
  * Version:     0.2
- * Author:      lgedeon, 10up
+ * Author:      lgedeon, ericmann, 10up
  */
 
 require_once ( 'term-data-store/term-data-store.php' );
 require_once ( 'class-term-meta.php' );
 
 /**
+ * Pre-register taxonomies that should have term meta.
+ *
+ * This paired with filtering term_meta_allow_late_registration to return false will restrict term meta to only specific
+ * taxonomies.
+ *
  * This implementation is designed to be forward compatible with expected changes to WordPress core and will be much
- * more efficient then. For now, only add term meta for taxonomies that need it.
+ * more efficient then. For now, limiting term meta to taxonomies that need it could save some overhead.
  *
  * @param $taxonomy
  * @return bool

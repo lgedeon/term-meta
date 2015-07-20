@@ -4,6 +4,7 @@
  *
  * Adds term meta to terms of select taxonomies. This is achieved by pairing a custom post type with each registered
  * taxonomy. If the taxonomy already contains terms the associated posts will be created when meta is added to the term.
+ * For all new terms a corresponding new cpt_type post will be created when the term is.
  *
  * Taxonomy post-type pairs are stored in $_taxonomies. Ids are cached in $_term_post_ids to reduce database hits.
  *
@@ -36,7 +37,8 @@ class Term_Meta {
 	protected $_taxonomies = array();
 
 	/**
-	 * @var array Stores previously retrieved ids to reduce db calls.
+	 * @var array Stores previously retrieved ids to reduce db calls. Provides a small benefit if same id is needed
+	 * multiple times in the same page load. Can be huge if object caching is enabled.
 	 */
 	protected $_term_post_ids = array();
 
@@ -79,10 +81,10 @@ class Term_Meta {
 
 	/**
 	 * This implementation is designed to be forward compatible with expected changes to WordPress core and will be much
-	 * more efficient then. For now, only add term meta for taxonomies that need it.
+	 * more efficient then. For now, though, we only add term meta for taxonomies that need it.
 	 *
 	 * If you want to do anything fancy with the CPT that will be attached to the taxonomy, you can define it ahead of
-	 * and pass it into the function. Otherwise this function will create it.
+	 * time and pass it into the function. Otherwise this function will create it.
 	 *
 	 * @param string $taxonomy   Taxonomy name
 	 * @param string $post_type  Post type name
@@ -112,14 +114,10 @@ class Term_Meta {
 	}
 
 	/**
-	 * Get ID for a taxonomy term pair.
+	 * Get ID of post paired with a given term in a specified taxonomy. We need that since we are really adding the meta
+	 * to that post.
 	 *
-	 * Not all taxonomy term pairs have unique IDs in WordPress core yet. All new terms created after 4.1 will, and the
-	 * rest are expected to be split in 4.2 or 4.3. For now, the same term_id is used multiple times in different
-	 * taxonomies.
-	 *
-	 * We solve this by using the post ID of the associated cpt we are using for meta storage. This function returns
-	 * that unique key.
+	 * This is not the same as the term ids created by WordPress.
 	 *
 	 * This key is intended for internal use only since taxonomy terms will have a unique ID soon, and it will be
 	 * different from the key returned by this function.
@@ -129,8 +127,14 @@ class Term_Meta {
 	 * @return bool|null|WP_Post
 	 */
 	public function get_taxonomy_term_id( $taxonomy, $term = '' ) {
-		if ( ! array_key_exists( $taxonomy, $this->_taxonomies ) ) {
+		if ( ! taxonomy_exists( $taxonomy ) ) {
 			return false;
+		} elseif ( ! array_key_exists( $taxonomy, $this->_taxonomies ) ) {
+			if ( apply_filters( 'term_meta_allow_late_registration', true, $taxonomy, $term ) ) {
+				$this->register_meta_taxonomy( $taxonomy );
+			} else {
+				return false;
+			}
 		}
 
 		if ( isset( $this->_term_post_ids[$taxonomy][$term] ) ) {
