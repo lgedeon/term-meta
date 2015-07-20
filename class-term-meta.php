@@ -64,11 +64,11 @@ class Term_Meta {
 	 * @return array
 	 */
 	public function create_term_post ( $taxonomy, $term ) {
-		$post_type = get_post_type_object( $this->_taxonomies[$taxonomy] );
+		$post_type = $this->_taxonomies[$taxonomy];
 
 		add_filter( 'tds_balancing_from_post', '__return_false' );
 		$post_id = wp_insert_post( array(
-			'post_type' => $post_type->slug,
+			'post_type' => $post_type,
 			'post_title'  => $term->name,
 			'post_name'   => $term->slug,
 			'post_status' => 'publish',
@@ -100,9 +100,9 @@ class Term_Meta {
 			$post_type = sanitize_key( ucfirst( $taxonomy ) ) . '_tax_meta';
 
 			$post_type_args = array(
-				'show_ui' => false,
-				'rewrite' => false,
-				'label'   => $taxonomy . ' taxonomy meta',
+				'show_ui'    => false,
+				'rewrite'    => false,
+				'label'      => $taxonomy . ' taxonomy meta',
 			);
 
 			register_post_type( $post_type, $post_type_args );
