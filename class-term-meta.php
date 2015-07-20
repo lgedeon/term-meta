@@ -151,7 +151,7 @@ class Term_Meta {
 			return false;
 		}
 
-		if ( $cpt_post = Term_Data_Store\get_related_post( $term, $taxonomy ) ) {
+		if ( $cpt_post = Term_Data_Store\get_related_post( $term ) ) {
 			$this->_term_post_ids[$taxonomy][$term->name] = $cpt_post->ID;
 			return $cpt_post->ID;
 		} else {
