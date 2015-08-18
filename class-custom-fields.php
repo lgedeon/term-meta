@@ -38,10 +38,15 @@ if ( ! class_exists( 'Term_Meta_Custom_Fields' ) ) {
 		}
 
 		public function action__init () {
-			foreach ( $this->_taxonomies as $taxonomy ) {
-				Term_Meta::instance()->register_term_meta_taxonomy( $taxonomy );
+			$taxonomies = (array) apply_filters( 'term_meta_custom_fields_taxonomies', array( 'category' ) );
+			$this->_taxonomies = array_intersect( get_taxonomies(), $taxonomies );
+
+			if ( ! empty( $this->_taxonomies) ) {
+				foreach ( $this->_taxonomies as $taxonomy ) {
+					Term_Meta::instance()->register_term_meta_taxonomy( $taxonomy );
+				}
+				add_action( 'add_meta_boxes', array( $this, 'action__add_meta_boxes' ) );
 			}
-			add_action( 'add_meta_boxes', array( $this, 'action__add_meta_boxes' ) );
 		}
 
 		public function action__add_meta_boxes ( $screen_id ) {
