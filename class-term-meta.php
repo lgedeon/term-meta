@@ -47,6 +47,7 @@ class Term_Meta {
 	 */
 	protected function __construct() {
 		add_action( 'term_meta_missing_paired_post', array( $this, 'create_term_post' ), 10, 2 );
+		add_action( 'init', array( $this, 'action__init' ) );
 	}
 
 	/**
@@ -84,20 +85,22 @@ class Term_Meta {
 	 * more efficient then. For now, though, we only add term meta for taxonomies that need it.
 	 *
 	 * If you want to do anything fancy with the CPT that will be attached to the taxonomy, you can define it ahead of
-	 * time and pass it into the function. Otherwise this function will create it.
+	 * time and pass it into the function. Otherwise this function will create a CPT for you.
 	 *
 	 * @param string $taxonomy   Taxonomy name
 	 * @param string $post_type  Post type name
 	 *
-	 * @return bool
+	 * @return bool True if successful or already registered. False on failure.
 	 */
 	public function register_term_meta_taxonomy( $taxonomy, $post_type = '' ) {
 		if ( ! taxonomy_exists( $taxonomy ) ) {
 			return false;
+		} elseif ( isset( $this->_taxonomies[$taxonomy] ) ) {
+			return true;
 		}
 
 		if ( ! post_type_exists( $post_type ) ) {
-			$post_type = sanitize_key( ucfirst( $taxonomy ) ) . '_tax_meta';
+			$post_type = $this->shorten_string( sanitize_key( $taxonomy ), 15 ) . '_meta';
 
 			$post_type_args = array(
 				'show_ui'    => false,
@@ -106,11 +109,28 @@ class Term_Meta {
 			);
 
 			register_post_type( $post_type, $post_type_args );
+
+			/* Since this has been auto_generated, let's store it and rebuild it on init so we will have it for obscure
+			 * things like a current_user_can check against a specific term meta post during an ajax callback.
+			 */
+			$option = (array) get_option( 'term_meta_options' );
+			$option['auto-taxonomies'][$post_type] = $post_type_args;
+			update_option( 'term_meta_options', $option );
 		}
 
 		Term_Data_Store\add_relationship( $post_type, $taxonomy );
 		$this->_taxonomies[$taxonomy] = $post_type;
 
+		return true;
+	}
+
+	public function action__init () {
+		$option = get_option( 'term_meta_options' );
+		if ( isset( $option['auto-taxonomies'] ) && is_array( $option['auto-taxonomies'] ) ) {
+			foreach ( $option['auto-taxonomies'] as $post_type => $post_type_args ) {
+				register_post_type( $post_type, $post_type_args );
+			}
+		}
 	}
 
 	/**
@@ -163,7 +183,16 @@ class Term_Meta {
 			}
 		}
 	}
+
+	function shorten_string ( $string, $length ) {
+		foreach ( array('e','a','i','o','s','u','f','n','h','a-z') as $l ) {
+			$excess = strlen( $string ) - $length;
+			if ( $excess <= 0 ) break;
+			$string = preg_replace( "/[$l]/", '', $string, $excess );
+		}
+		return $string;
+	}
 }
 
-Term_Meta::instance();
+	Term_Meta::instance();
 }
