@@ -9,6 +9,9 @@
 
 require_once ( 'term-data-store/term-data-store.php' );
 require_once ( 'class-term-meta.php' );
+require_once ( 'class-ui.php');
+require_once ( 'class-custom-fields.php');
+
 
 /**
  * Pre-register taxonomies that should have term meta.
