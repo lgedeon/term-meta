@@ -137,7 +137,7 @@ if ( ! class_exists( 'Term_Meta_UI' ) ) {
 		 */
 		public function action__created_edited_term ( $term_id, $tt_id, $taxonomy ) {
 			$term = get_term( $term_id, $taxonomy );
-			$context = ( 'create_term' == current_filter() ) ? 'add' : 'edit';
+			$context = ( 'created_term' == current_filter() ) ? 'add' : 'edit';
 
 			do_action( 'term_meta_save_form_fields', $taxonomy, $term, $context );
 		}
