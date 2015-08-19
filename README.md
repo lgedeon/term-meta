@@ -9,3 +9,4 @@ TODO:
 * Add option to create cpt posts for terms only at the time that meta is added versus creating for all new terms.
 * Filter the query so you can return posts based on term meta. Will have get matching terms first and then search based on that.
 * Get all terms with meta matching criteria.
+* Add the_term_meta() analogous to the_meta() - should return all meta of all terms of a post unless a specific tax and term are requested. See https://codex.wordpress.org/Custom_Fields#Function_Reference
