@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Term Meta Polyfill ( aka Taxonomy Meta )
  * Plugin URL: https://github.com/lgedeon/term-meta
- * Description: Term Meta for WordPress without adding or modifying tables. Adds term meta to terms of select taxonomies. This is achieved by pairing a custom-post-type post with each registered taxonomy. The functions are designed to be forward compatible. So as parts of the term meta added to core https://core.trac.wordpress.org/ticket/10142 functions in this plugin can be updated and eventually replaced.
+ * Description: Term Meta for WordPress without adding or modifying tables and without big messy options arrays. Adds term meta to terms of select taxonomies. This is achieved by pairing a custom-post-type post with each registered taxonomy. The functions are designed to be forward compatible. So as parts of the term meta added to core https://core.trac.wordpress.org/ticket/10142 functions in this plugin can be updated and eventually replaced.
  * Version:     0.2
  * Author:      lgedeon, ericmann, 10up
  */
