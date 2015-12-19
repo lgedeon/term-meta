@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Term Meta Polyfill ( aka Taxonomy Meta )
  * Plugin URL: https://github.com/lgedeon/term-meta
- * Description: Term Meta for WordPress without adding or modifying tables and without big messy options arrays. Adds term meta to terms of select taxonomies. This is achieved by pairing a custom-post-type post with each registered taxonomy. The functions are designed to be forward compatible. So as parts of the term meta added to core https://core.trac.wordpress.org/ticket/10142 functions in this plugin can be updated and eventually replaced.
+ * Description: Term Meta for WordPress without adding or modifying tables. Adds term meta to terms of select taxonomies. This is achieved by pairing a custom-post-type post with each registered taxonomy. The functions are designed to be forward compatible. So as parts of the term meta added to core https://core.trac.wordpress.org/ticket/10142 functions in this plugin can be updated and eventually replaced.
  * Version:     0.2
  * Author:      lgedeon, ericmann, 10up
  */
@@ -44,8 +44,8 @@ if ( ! function_exists( 'register_term_meta_taxonomy' ) ) {
  * @param bool $unique Optional, default is false. Whether the same key should not be added.
  * @return int|bool Meta ID on success, false on failure.
  */
-if ( ! function_exists( 'add_term_meta' ) ) {
-	function add_term_meta( $taxonomy, $term, $meta_key, $meta_value, $unique = false ) {
+if ( ! function_exists( 'add_term_meta_by_taxonomy' ) ) {
+	function add_term_meta_by_taxonomy( $taxonomy, $term, $meta_key, $meta_value, $unique = false ) {
 		$term_meta = Term_Meta::instance();
 		if ( $term_id = $term_meta->get_term_meta_post_id( $taxonomy, $term ) ) {
 			return add_metadata('post', $term_id, $meta_key, $meta_value, $unique);
@@ -69,8 +69,8 @@ if ( ! function_exists( 'add_term_meta' ) ) {
  * @param mixed $meta_value Optional. Metadata value.
  * @return bool True on success, false on failure.
  */
-if ( ! function_exists( 'delete_term_meta' ) ) {
-	function delete_term_meta( $taxonomy, $term, $meta_key, $meta_value = '' ) {
+if ( ! function_exists( 'delete_term_meta_by_taxonomy' ) ) {
+	function delete_term_meta_by_taxonomy( $taxonomy, $term, $meta_key, $meta_value = '' ) {
 		$term_meta = Term_Meta::instance();
 		if ( $term_id = $term_meta->get_term_meta_post_id( $taxonomy, $term ) ) {
 			return delete_metadata( 'post', $term_id, $meta_key, $meta_value );
@@ -90,8 +90,8 @@ if ( ! function_exists( 'delete_term_meta' ) ) {
  * @return mixed Will be an array if $single is false. Will be value of meta data field if $single
  *  is true.
  */
-if ( ! function_exists( 'get_term_meta' ) ) {
-	function get_term_meta( $taxonomy, $term, $key = '', $single = false) {
+if ( ! function_exists( 'get_term_meta_by_taxonomy' ) ) {
+	function get_term_meta_by_taxonomy( $taxonomy, $term, $key = '', $single = false) {
 		$term_meta = Term_Meta::instance();
 		if ( $term_id = $term_meta->get_term_meta_post_id( $taxonomy, $term ) ) {
 			return get_metadata('post', $term_id, $key, $single);
@@ -116,8 +116,8 @@ if ( ! function_exists( 'get_term_meta' ) ) {
  * @param mixed $prev_value Optional. Previous value to check before removing.
  * @return bool True on success, false on failure.
  */
-if ( ! function_exists( 'update_term_meta' ) ) {
-	function update_term_meta( $taxonomy, $term, $meta_key, $meta_value, $prev_value = '') {
+if ( ! function_exists( 'update_term_meta_by_taxonomy' ) ) {
+	function update_term_meta_by_taxonomy( $taxonomy, $term, $meta_key, $meta_value, $prev_value = '') {
 		$term_meta = Term_Meta::instance();
 		if ( $term_id = $term_meta->get_term_meta_post_id( $taxonomy, $term ) ) {
 			return update_metadata('post', $term_id, $meta_key, $meta_value, $prev_value );
