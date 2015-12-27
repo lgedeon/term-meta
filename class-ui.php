@@ -7,7 +7,11 @@
  *     term_meta_output_form_fields
  *     term_meta_save_form_fields
  *
- * Note: We are responding to actions that are already nonced. We may not need additional nonce.
+ * Note: We are responding to actions that are already nonced. We may not need an additional nonce.
+ *
+ * todo: split this into two classes - one that adds metaboxes and the other that just adds fields to current tax ui
+ * todo: and see if you can kick up support for custom fields ui in taxonomy - is that the only reason for action__save_form_fields
+ * todo: but most importantly get this to use new term meta
  */
 if ( ! class_exists( 'Term_Meta_UI' ) ) {
 
@@ -33,7 +37,7 @@ if ( ! class_exists( 'Term_Meta_UI' ) ) {
 		/**
 		 * @var int The post associated with the current term we are editing.
 		 */
-		protected $_term_meta_post_id = null;
+//		protected $_term_meta_post_id = null;
 
 		/**
 		 * Constructor -  Wire up actions and filters
@@ -64,16 +68,17 @@ if ( ! class_exists( 'Term_Meta_UI' ) ) {
 
 			if ( isset( $_GET['tag_ID'] ) ) {
 				$term = get_term( $_GET['tag_ID'], $screen->taxonomy );
-				$this->_term_meta_post_id   = Term_Meta::instance()->get_term_meta_post_id( $term->taxonomy, $term );
-				$term_meta_post = get_post( $this->_term_meta_post_id );
+//				$this->_term_meta_post_id   = Term_Meta::instance()->get_term_meta_post_id( $term->taxonomy, $term );
+//				$term_meta_post = get_post( $this->_term_meta_post_id );
 			} else {
-				$term_meta_post = null;
+				$term = null;
 			}
 
-			do_action( 'add_meta_boxes_' . $screen->id, $term_meta_post );
-			do_action( 'add_meta_boxes', $screen->id, $term_meta_post );
+			do_action( 'add_meta_boxes_' . $screen->id, $term );
+			do_action( 'add_meta_boxes', $screen->id, $term );
 
 			add_action( 'admin_footer', array( $this, 'action__admin_footer' ) );
+			// is this only for custom fields box?
 			wp_enqueue_script( 'postbox' );
 		}
 
@@ -97,27 +102,27 @@ if ( ! class_exists( 'Term_Meta_UI' ) ) {
 		}
 
 		/*
-		 * Add the framework for adding metaboxes.
+		 * Add the framework for adding metaboxes. Lots of references to "post" since that is how the css & js are setup
 		 */
 		public function action__output_form_fields ( $taxonomy, $term, $context ) {
 			if ( 'edit' == $context ) {
 				return;
 			} elseif ( 'meta-box' == $context ) {
-				$term_meta_post = get_post( $this->_term_meta_post_id );
+				$term = get_term( $term, $taxonomy );
 			} else {
-				$term_meta_post = null;
+				$term = null;
 			}
 
 			/* Used to save closed meta boxes and their order */
 			wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', null );
 			wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', null );
  		?>
-			<input type='hidden' id='post_ID' name='post_ID' value='<?php echo $this->_term_meta_post_id; ?>' />
+			<input type='hidden' id='term_ID' name='term_ID' value='<?php echo $term->term_id; ?>' />
 			<div id="poststuff" style="min-width: 0">
 
 				<div id="post-body" class="metabox-holder columns-1">
 
-					<?php do_meta_boxes( '', $context, $term_meta_post ); ?>
+					<?php do_meta_boxes( '', $context, $term ); ?>
 
 				</div> <!-- #post-body -->
 
@@ -142,7 +147,8 @@ if ( ! class_exists( 'Term_Meta_UI' ) ) {
 			do_action( 'term_meta_save_form_fields', $taxonomy, $term, $context );
 		}
 
-		public function action__save_form_fields ( $taxonomy, $term, $context ) {
+		// This function may be helpful for the field only (no metabox) method.
+/*		public function action__save_form_fields ( $taxonomy, $term, $context ) {
 			// copy the relevant bits from edit_post()
 			$post_data = &$_POST;
 			$post_ID = $post_data['post_id'];
@@ -176,7 +182,7 @@ if ( ! class_exists( 'Term_Meta_UI' ) ) {
 
 			update_post_meta( $post_ID, '_edit_last', get_current_user_id() );
 		}
-	}
+*/	}
 
 	Term_Meta_UI::instance();
 }

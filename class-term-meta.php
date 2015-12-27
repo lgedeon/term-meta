@@ -90,13 +90,13 @@ class Term_Meta {
 	 * @param string $taxonomy   Taxonomy name
 	 * @param string $post_type  Post type name
 	 *
-	 * @return bool True if successful or already registered. False on failure.
+	 * @return bool|string Name of post_type if successful or already registered. False on failure.
 	 */
 	public function register_term_meta_taxonomy( $taxonomy, $post_type = '' ) {
 		if ( ! taxonomy_exists( $taxonomy ) ) {
 			return false;
 		} elseif ( isset( $this->_taxonomies[$taxonomy] ) ) {
-			return true;
+			return $this->_taxonomies[$taxonomy];
 		}
 
 		if ( ! post_type_exists( $post_type ) ) {
@@ -114,6 +114,7 @@ class Term_Meta {
 			 * things like a current_user_can check against a specific term meta post during an ajax callback.
 			 */
 			$option = (array) get_option( 'term_meta_options' );
+			$post_type_args['taxonomy'] = $taxonomy;
 			$option['auto-taxonomies'][$post_type] = $post_type_args;
 			update_option( 'term_meta_options', $option );
 		}
@@ -121,7 +122,7 @@ class Term_Meta {
 		Term_Data_Store\add_relationship( $post_type, $taxonomy );
 		$this->_taxonomies[$taxonomy] = $post_type;
 
-		return true;
+		return $post_type;
 	}
 
 	public function action__init () {
@@ -184,6 +185,17 @@ class Term_Meta {
 		}
 	}
 
+	// Get unique term id now that 4.4 supports real term meta, we can start to use it instead of postmeta
+	function get_term_meta_id ( $taxonomy, $term = '') {
+		if ( is_string( $term ) ) {
+			$term = get_term_by( 'name', $term, $taxonomy );
+		} else {
+			$term = get_term( $term, $taxonomy );
+		}
+
+		return isset( $term->term_id ) ? $term->term_id : false;
+	}
+
 	function shorten_string ( $string, $length ) {
 		foreach ( array('e','a','i','o','s','u','f','n','h','a-z') as $l ) {
 			$excess = strlen( $string ) - $length;
@@ -191,6 +203,29 @@ class Term_Meta {
 			$string = preg_replace( "/[$l]/", '', $string, $excess );
 		}
 		return $string;
+	}
+
+	function get_term_meta_post_types ( $include_unregistered = false ) {
+		global $wpdb;
+
+		$post_types = array_values( $this->_taxonomies );
+
+		if ( $include_unregistered ) {
+			// get all post types ever used
+			$other_post_types = $wpdb->get_col( "SELECT DISTINCT post_type FROM {$wpdb->posts}" );
+
+			// only consider ones that are currently unused and not already in our list
+			$other_post_types = array_diff( $other_post_types, get_post_types(), $post_types );
+
+			// The most likely to be abandoned are auto-created ones. The auto-creator adds _meta to the name.
+			foreach ( $other_post_types as $post_type ) {
+				if ( '_meta' === substr( $post_type, -5 ) ) {
+					$post_types[] = $post_type;
+				}
+			}
+		}
+
+		return $post_types;
 	}
 }
 
