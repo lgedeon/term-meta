@@ -62,7 +62,7 @@ if ( ! class_exists( 'Term_Meta_UI' ) ) {
 
 		public function action__current_screen ( $screen ) {
 			// both add and edit screens for all taxonomies use this url base
-			if ( 'edit-tags' !== $screen->base ) {
+			if ( ! in_array( $screen->base, array( 'edit-tags', 'term' ) ) ) {
 				return;
 			}
 
